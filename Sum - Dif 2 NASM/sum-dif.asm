@@ -8,16 +8,16 @@ msgNum1Len equ $-msgNum1
 msgNum2 db "Type the second number (Positive): ", 10
 msgNum2Len equ $-msgNum2
 
-msgError db "- ERROR -", 10
+msgError db "- ERROR - Type 1 to restart the program. Anything else will exit the program.", 10
 msgErrorLen equ $-msgError
 
-msgSuma db "Suma base "
+msgSuma db "   Sum: "
 msgSumaLen equ $-msgSuma
 
-msgDif db "Diferencia base "
+msgDif db "   Difference: "
 msgDifLen equ $-msgDif
 
-msgLabel db ": "
+msgLabel db "Base "
 msgLabelLen equ $-msgLabel
 
 %define numberSize 20
@@ -27,6 +27,10 @@ section .bss
 
 num1 resb numberSize
 num2 resb numberSize
+
+baseNum resb 3
+
+restart resb 2
 
 result resb numberSize
 
@@ -44,7 +48,7 @@ section .text
 %endmacro
 
 
-; %1 Reserved memory from .bss
+; %1 Reserved memory 
 ; %2 Number of bytes 
 %macro getInput 2
     mov rax, 0
@@ -65,7 +69,7 @@ section .text
     xor r10, r10  
     mov r10, 1    ; Cleans and sets decimal position
 
-    mov r11, 10
+    mov rbx, 10
 
     %%_vloop:
         mov al, BYTE[%1 + rcx] ; Moves one character to AL
@@ -99,7 +103,7 @@ section .text
 
         xor rax, rax 
         mov rax, r10
-        mul r11
+        mul rbx
         xor r10, r10
         mov r10, rax ; Increments position
         
@@ -138,6 +142,40 @@ section .text
     neg %3
 
     %%_end:
+%endmacro
+
+; %1 Register holding a number
+; %2 Reserved memory
+%macro printDigit 2
+    mov rax, %1
+
+    mov r8, 10 
+    xor rcx, rcx ; Contador
+    push 10 
+
+    %%rloop:
+        xor rdx, rdx
+        div r8
+        add rdx, 48 ; Conversion a caracter
+        push rdx
+
+        cmp rax, 0
+        je %%sloop ; RAX vacio 
+    
+        jmp %%rloop
+
+    %%sloop:
+        xor r9, r9 ; Holder temporal
+        pop r9
+        mov [%2 + rcx], r9
+        inc rcx
+
+        cmp r9, 10
+        je %%_end
+
+        jmp %%sloop
+    %%_end:
+    print baseNum, 3
 %endmacro
 
 
@@ -180,11 +218,13 @@ section .text
     %%_end:
 %endmacro
 
-; %1 Number
-%macro printDigit 1
-    
+; %1 Reserved memory to clean
+%macro clean 1
+    mov rdi, %1
+    mov rcx, 32
+    xor rax, rax
+    rep stosb
 %endmacro
-
 
 global _start
 
@@ -192,7 +232,7 @@ _start:
     ; r8 Holds the first number
     ; r9 Holds the second number
     ; r10 Holds the sum
-    ; r11 Holds the difference
+    ; r13 Holds the difference
     print msgNum1, msgNum1Len
     getInput num1, numberSize
     saveNumber num1, r8
@@ -202,25 +242,41 @@ _start:
     saveNumber num2, r9
 
     sum r8, r9, r10
-    difference r8, r9, r11
+    difference r8, r9, r13
 
-    xor rcx, rcx
-    mov rcx, 2     ;Counter for all bases
+    xor r15, r15
+    mov r15, 2     ;Counter for all bases
 
-    convert r11, rcx
+_baseLoop:
+    print msgLabel, msgLabelLen
+    printDigit r15, baseNum
+    clean baseNum
+
+    convert r13, r15
     print msgDif, msgDifLen
-    print msgLabel, msgLabelLen
     print result, resultSize
 
-    convert r10, rcx
+    clean result
+
+    convert r10, r15
     print msgSuma, msgSumaLen
-    print msgLabel, msgLabelLen
     print result, resultSize
 
-    jmp _exit
+    clean result
+
+    cmp r15, 16
+    je _exit
+
+    inc r15
+    jmp _baseLoop
 
 _error:
     print msgError, msgErrorLen
+    
+    getInput restart, 2
+    cmp BYTE[restart], 49
+    je _start
+
     jmp _exit
 
 _exit:
