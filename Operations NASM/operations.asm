@@ -2,24 +2,55 @@ section .data
 
 lookUp db '0123456789ABCDEF'
 
+msgChoice db "Choose one from the following choices: ", 10
+msgChoiceLen equ $-msgChoice
+
+msgSum db "-Sum (1) ", 10
+msgSumLen equ $-msgSum
+
+msgDifference db "-Difference (2) ", 10
+msgDiffereceLen equ $-msgDifference
+
+msgMult db "-Multiplication (3) ", 10
+msgMultLen equ $-msgMult
+
+msgDiv db "-Division (4) ", 10
+msgDivLen equ $-msgDiv
+
 msgNum1 db "Type the first number (Positive): ", 10
 msgNum1Len equ $-msgNum1
 
 msgNum2 db "Type the second number (Positive): ", 10
 msgNum2Len equ $-msgNum2
 
+msgOverFlow db "The result generates Overflow... ", 10
+msgOverFlowLen equ $-msgOverFlow
+
+msgBin db "The binary result is: ", 10
+msgBinLen equ $-msgBin
+
+msgOct db "The octal result is: ", 10
+msgOctLen equ $-msgOct
+
+msgDec db "The decimal result is: ", 10
+msgDecLen equ $-msgDec
+
+msgHex db "The hexadecimal result is: ", 10
+msgHexLen equ $-msgHex
+
+
 msgError db "- ERROR - Type 1 to restart the program. Anything else will exit the program.", 10
 msgErrorLen equ $-msgError
 
-msgSuma db "   Sum: "
-msgSumaLen equ $-msgSuma
-
-msgDif db "   Difference: "
-msgDifLen equ $-msgDif
+msgOverRAX db "- The product surpasses 64-Bit capacity. Only Hexadecimal result will be displayed.", 10
+msgOverRAXLen equ $-msgOverRAX
 
 msgLabel db "Base "
 msgLabelLen equ $-msgLabel
-
+;;;;;;;;;;;;;;;;;;;;;
+flag db "Im here flag "
+flaglen equ $-flag
+;;;;;;;;;;;;;;;;;;;;;;;;
 %define numberSize 21
 %define resultSize 100
 
@@ -29,7 +60,7 @@ num1 resb numberSize
 num2 resb numberSize
 
 baseNum resb 3
-
+choice resb 10
 restart resb 2
 
 result resb numberSize
@@ -118,9 +149,9 @@ section .text
 ; %3 Storage Register
 %macro sum 3
     xor %3, %3  ; Cleans storage
-
     add %3, %1  
     add %3, %2
+    jo _overflow
 %endmacro
 
 
@@ -142,6 +173,48 @@ section .text
     neg %3
 
     %%_end:
+%endmacro
+
+; %1 First number as register
+; %2 Second number as register
+; %3 Storage register
+; %4 High end storage register
+%macro multiplication 4
+    xor %3, %3 ; cleans storage
+
+    mov rax, %1
+    mov rcx, %2
+    imul rcx
+    mov %3, rax
+    mov %4, rdx
+%endmacro
+; %1 First number as register
+; %2 Second number as register
+; %3 Storage register
+%macro division 3
+    xor %3, %3 ; cleans storage
+    cmp %1, %2
+    jbe %%secondGfirst
+
+    %%firstGsecond:
+        mov rax, %1
+        mov rdx, 0
+        mov rcx, %2
+        div rcx
+        mov %3, rax
+        jmp %%_end
+
+    %%secondGfirst:
+        mov rax, %2
+        mov rdx, 0
+        mov rcx, %1
+        div rcx
+        mov %3, rax
+        jmp %%_end
+
+    %%_end:
+
+
 %endmacro
 
 ; %1 Register holding a number
@@ -186,11 +259,10 @@ section .text
     xor rdx, rdx
     xor rbx, rbx
     xor rcx, rcx
-
+ 
     mov rax, %1
-
     push 10
-
+ 
     mov rcx, %2
     %%_division:
         div rcx
@@ -218,6 +290,23 @@ section .text
     %%_end:
 %endmacro
 
+; %1 Reserved memory
+; %2 Character that needs to change
+; %3 Character to replace %2 with
+%macro changeCharacter 3
+    xor rcx, rcx
+
+    %%_loop:
+        cmp BYTE[%1 + rcx], %2
+        je %%_end
+
+        inc rcx
+        jmp %%_loop
+
+    %%_end:
+        mov BYTE[%1 + rcx], %3
+%endmacro
+
 ; %1 Reserved memory to clean
 %macro clean 1
     mov rdi, %1
@@ -229,46 +318,105 @@ section .text
 global _start
 
 _start:
-    ; r8 Holds the first number
-    ; r9 Holds the second number
-    ; r10 Holds the sum
-    ; r13 Holds the difference
+; Initial prints with the operation choices for the user
+    print msgChoice, msgChoiceLen
+    print msgSum, msgSumLen
+    print msgDifference, msgDiffereceLen
+    print msgMult, msgMultLen
+    print msgDiv, msgDivLen
+
+; Choice stores the operation ID, whether it's 1,2,3,4
+; Here it validates if 1<= choice <= 4
+    getInput choice, 10
+    cmp BYTE[choice], 49
+    jb _error
+    cmp BYTE[choice], 52
+    jg _error
+    cmp BYTE[choice + 1], 10
+    jne _error
+
+; r8 stores the first number of the operation
     print msgNum1, msgNum1Len
     getInput num1, numberSize
     saveNumber num1, r8
 
+; r9 stores the first number of the operation
     print msgNum2, msgNum2Len
     getInput num2, numberSize
     saveNumber num2, r9
 
-    sum r8, r9, r10
+; Set of comparisons between the user choice and the operation ID
+    xor rdx, rdx
+    cmp BYTE[choice], 49
+    je _sum
+    cmp BYTE[choice], 50
+    je _dif
+    cmp BYTE[choice], 51
+    je _mult
+    cmp BYTE[choice], 52
+    je _div
+
+_sum:
+    sum r8, r9, r13
+    jmp _displayResultAll
+_dif:
     difference r8, r9, r13
+    jmp _displayResultAll
+_mult:
+    multiplication r8, r9, r13, r14
+    cmp rdx, 0 ; Checks if the product is bigger than 64 bits 
+    je _displayResultAll
+    
+    jmp _displayHexResult
 
-    xor r15, r15
-    mov r15, 2     ;Counter for all bases
+_div:
+    division r8, r9, r13
+    jmp _displayResultAll
 
-_baseLoop:
-    print msgLabel, msgLabelLen
-    printDigit r15, baseNum
-    clean baseNum
+_displayHexResult:
+; Prints a max of 128 bits
+    print msgOverRAX, msgOverRAXLen
+    print msgHex, msgHexLen
 
-    convert r13, r15
-    print msgDif, msgDifLen
+    convert r14, 16
+    changeCharacter result, 10, 0
     print result, resultSize
 
     clean result
 
-    convert r10, r15
-    print msgSuma, msgSumaLen
+    convert r13, 16
     print result, resultSize
 
+    jmp _exit
+
+_displayResultAll:
+;   Set of instructions that print the result (r13) in binary, octal, decimal and hexadecimal base 
+    print msgBin, msgBinLen
+    convert r13, 2
+    print result, resultSize
     clean result
 
-    cmp r15, 16
-    je _exit
+    print msgOct, msgOctLen
+    convert r13, 8
+    print result, resultSize
+    clean result
 
-    inc r15
-    jmp _baseLoop
+    print msgDec, msgDecLen
+    convert r13, 10
+    print result, resultSize
+    clean result
+
+    print msgHex, msgHexLen
+    convert r13, 16
+    print result, resultSize
+    clean result
+    jmp _exit
+
+
+_overflow:
+; Alerts the user that the result of the operation generates overflow
+    print msgOverFlow, msgOverFlowLen
+    jmp _error
 
 _error:
     print msgError, msgErrorLen
