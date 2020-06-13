@@ -1,49 +1,20 @@
-section .data
-    msgTranslationChoice db "Digite el numero correspondiente: ", 10, "(0) Espanol -> Malespin", 10, "(1) Malespin -> Espanol", 10
-    msgTranslationChoiceLen equ $-msgTranslationChoice
+%include 'data.inc'
+%include 'macros.inc'
 
-    msgReadingChoice db "Digite el numero correspondiente:", 10, "(0) Leer de terminal.", 10, "(1) Leer de archivo.", 10
-    msgReadingChoiceLen equ $-msgReadingChoice
+section .data
 
 section .bss
-    translationChoice resb 2
-    readingChoice resb 2
+    ; --- FILE MANAGEMENT
+    descriptor resb 4
+    buffer resb MAX_FILE_LEN
+
+    ; --- USER INTERACTION
+    translationChoice resb CHOICE_SIZE
+    readingChoice resb CHOICE_SIZE
+
+    FILE_NAME resb FILE_PATH_SIZE
 
 section .text
-; ============================
-; ==== MACRO DELCLARATION ====
-; ============================
-
-; --- PRINTS MESSAGE ON TERMINAL
-; %1 : STRING
-; %2 : NUMBER OF CHARACTERS
-%macro print 2
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, %1
-    mov rdx, %2
-    syscall
-%endmacro
-
-
-; --- GETS USER INPUT
-; %1 : RESERVED MEMORY
-; %2 : NUMBER OF BYTES
-%macro getInput 2
-    mov rax, 0
-    mov rdi, 0
-    mov rsi, %1
-    mov rdx, %2
-    syscall
-%endmacro
-
-
-; --- EXIT
-%macro exit 0
-    mov rax, 60
-    mov rdi, 0
-    syscall
-%endmacro
 
 
 ; ============================
@@ -52,15 +23,50 @@ section .text
 global _start
 
 _start:
-    ; USER INTERACTION
+
+    ; --- USER INTERACTION ---
     print msgTranslationChoice, msgTranslationChoiceLen
-    getInput translationChoice, 2
+    getInput translationChoice, CHOICE_SIZE
+
+    cmp BYTE[translationChoice + 1], 10 ; INPUT VALIDATION
+    jne _setUpError
 
     print msgReadingChoice, msgReadingChoiceLen
-    getInput readingChoice, 2
+    getInput readingChoice, CHOICE_SIZE
+    
+    cmp BYTE[readingChoice + 1], 10 ; INPUT VALIDATION
+    jne _setUpError
 
-    ; READING AND TRANSLATING
+    ; --- JUMP TO RESPECTIVE CHOICE
+    cmp BYTE[readingChoice], 48
+    jl _setUpError           ; FIRST BYTE < '0'
+    je _readPrompt                            
 
-    ; WRITING
+    cmp BYTE[readingChoice], 49
+    jg _setUpError           ; FIRST BYTE > '1'
+    je _readFile
 
+
+_readFile:
+    print msgFileName, msgFileNameLen  ; Prints file input message
+
+    getInput FILE_NAME, FILE_PATH_SIZE ; Gets the file name
+    replaceFinal FILE_NAME, 0          ; Changes 10 to 0 at the end of the string
+    openFile FILE_NAME, O_RDONLY       ; Opens the file as 'read-only'
+    readFile                           ; Puts information from file
+
+    print buffer, MAX_FILE_LEN
+
+    closeFile                          ; Closes the file
+
+    exit
+
+_readPrompt:
+    print msgFlag2, msgFlag2Len
+    exit
+
+
+; --- ERROR FLAGS
+_setUpError:
+    print msgSetUpError, msgSetUpErrorLen    
     exit
