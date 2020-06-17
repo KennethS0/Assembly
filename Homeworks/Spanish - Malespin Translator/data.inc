@@ -12,6 +12,28 @@ section .data
     msgMessage db 'Ingrese el mensaje a traducir:', 10
     msgMessageLen equ $-msgMessage
 
+    ; --- OUTPUTS
+    msgOutputFile db 'Modified text: '
+    msgOutputFileLen equ $-msgOutputFile
+
+    msgTotalWords db 10, 'Amount of words in input: '
+    msgTotalWordsLen equ $-msgTotalWords
+
+    msgTotalLetters db 'Amount of letters in input: '
+    msgTotalLettersLen equ $-msgTotalLetters
+    
+    msgTotalChangedWords db 'Amount of changed words: '
+    msgTotalChangedWordsLen equ $-msgTotalChangedWords
+    
+    msgTotalChangedLetters db 'Amount of changed letters: ' 
+    msgTotalChangedLettersLen equ $-msgTotalChangedLetters
+
+    msgChangedLettersRate db 'Percentage of changed letters: '
+    msgChangedWordsLettersLen equ $-msgChangedLettersRate
+
+    msgChangedWordsRate db 'Percentage of changed words: '
+    msgChangedWordsRateLen equ $-msgChangedWordsRate    
+
     ; --- USER INPUT ERROR
     msgSetUpError db "Hubo un error con su input. Desea salir del programa o reiniciarlo. Digite el numero correspondiente:", 10, "(0) Reiniciar.", 10, "(?) Cualquier otro para salir.", 10
     msgSetUpErrorLen equ $-msgSetUpError
@@ -29,7 +51,7 @@ section .data
 
     ; --- OUTPUT
     OUTPUT_FILE_NAME db "translation.txt", 0
-
+    OUTPUT_FILE_NAME_LEN equ $-OUTPUT_FILE_NAME
 
     ; --- CONSTANTS 
     %define CHOICE_SIZE 2

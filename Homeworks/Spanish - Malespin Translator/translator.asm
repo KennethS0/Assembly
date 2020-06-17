@@ -64,7 +64,7 @@ _readPrompt:
     print msgMessage, msgMessageLen    ; Gets input from the command line
     getInput buffer, MAX_FILE_LEN
     
-    getLen buffer, r8
+    getBufferLen buffer
 
     jmp _translationChoice
 
@@ -86,10 +86,48 @@ _malespinToSpanish:
     jmp _createOutPut
 
 _createOutPut:
+    mov rax, r15
+    printRax
+
     openFile OUTPUT_FILE_NAME, O_CREAT+O_WRONLY ; Creates the output file and opens it as write only
     writeFile outputmsg, r8
     
     closeFile
+    
+    ; Shows statistic to user
+    print msgOutputFile, msgOutputFileLen
+    print OUTPUT_FILE_NAME, OUTPUT_FILE_NAME_LEN
+    print msgTotalWords, msgTotalWordsLen
+    
+    mov rax, r14
+    printRax
+
+    print msgTotalLetters, msgTotalLettersLen
+    
+    mov rax, r12
+    printRax
+
+    print msgTotalChangedWords, msgTotalChangedWordsLen
+    
+    mov rax, r15
+    printRax
+
+    print msgTotalChangedLetters, msgTotalChangedLettersLen
+
+    mov rax, r13
+    printRax
+
+
+    print msgChangedLettersRate, msgChangedWordsLettersLen
+
+    getPercentage r13, r12
+    printRax
+
+    print msgChangedWordsRate, msgChangedWordsRateLen
+
+    getPercentage r15, r14
+    printRax
+
     jmp _exit
 
 ; --- ERROR FLAGS

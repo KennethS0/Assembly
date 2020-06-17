@@ -3,6 +3,7 @@ section .bss
 digitSpace resb 100
 digitSpacePos resb 8
 
+changedWord resb 1
     ; --- FILE MANAGEMENT
 descriptor resb 4
 buffer resb MAX_FILE_LEN
@@ -182,6 +183,15 @@ MESSAGE resb MAX_USER_INPUT
     %%_newWord:
         inc r14 ; Increments word count
 
+        cmp BYTE[changedWord], 1
+        je %%_resetWordCount
+
+        jmp %%_increment
+
+    %%_resetWordCount:
+        mov BYTE[changedWord], 0
+        inc r15
+
     %%_lookUpLoop:    
         xor r9, r9
         xor bl, bl
@@ -200,6 +210,8 @@ MESSAGE resb MAX_USER_INPUT
             %%_swap:
                 mov bl, BYTE[%3 + r9]
                 mov BYTE[%5 + rcx], bl
+                mov BYTE[changedWord], 1
+                inc r13             ; Increments the counter of changed letters
 
         %%_endloop:
             xor r9, r9
@@ -212,26 +224,25 @@ MESSAGE resb MAX_USER_INPUT
     %%_exit:
 %endmacro
 
+
 ; --- GETS THE LENGTH OF A STRING FROM CONSOLE
 ; %1 : String
 ; %2 : Register where the length is saved
-%macro getLen 2
-    xor %2, %2
-    xor rcx, rcx
+%macro getBufferLen 1
+    mov bl, 0
+    mov r8, 0 ; Cleans both registers
+    %%_loop:
 
-    %%_xloop:
+        mov bl, BYTE[%1 + r8] ; Iterates through each byte
+        cmp bl, 10             ; Compares with 'Enter' value
 
-        mov al, BYTE[%1 + rcx]
+        je %%_endloop
+        
+        add r8, 1
+        jmp %%_loop
 
-        cmp al, 10
-        jmp %%_end
-
-        inc rcx
-        jmp %%_xloop
-    
-    %%_end:
-        mov %2, rcx
-%endmacro
+    %%_endloop:
+%endmacro 
 
 ; --- GET FILE SIZE
 %macro getFileSize 0
@@ -284,6 +295,21 @@ MESSAGE resb MAX_USER_INPUT
         cmp rcx, digitSpace
         jge %%_printRAXLoop2
 %endmacro
+
+; --- Divides two numbers to obtain the percentage
+; --- The result is saved in RAX
+; %1 : Smallest number (as register)
+; %2 : Biggest number (as register)
+%macro getPercentage 2
+    mov rax, %1
+    mov rdx, 0
+    mov rcx, 100
+    mul rcx
+
+    mov rcx, %2
+    div rcx
+%endmacro
+
 
 
 ; --- CLOSE FILE
