@@ -9,13 +9,16 @@ section .data
     msgFileName db 'Ingrese el nombre del archivo:',0xA,0xD
     msgFileNameLen equ $-msgFileName
 
+    msgMessage db 'Ingrese el mensaje a traducir:', 10
+    msgMessageLen equ $-msgMessage
+
     ; --- USER INPUT ERROR
-    msgSetUpError db "Hubo un error con su input. Desea salir del programa o reiniciarlo. Digite el numero correspondiente:", 10, "(0) Salir.", 10, "(1) Reiniciar.", 10
+    msgSetUpError db "Hubo un error con su input. Desea salir del programa o reiniciarlo. Digite el numero correspondiente:", 10, "(0) Reiniciar.", 10, "(?) Cualquier otro para salir.", 10
     msgSetUpErrorLen equ $-msgSetUpError
 
     ; --- LOOK UP TABLES
-    spanishLookUp db "aibfpAIBFP"
-    malespinLookUp db "eotgmEOTGM"
+    spanishLookUp db "aibfpAIBFPeotgmEOTGM"
+    malespinLookUp db "eotgmEOTGMaibfpAIBFP"
 
     ; --- DEBUGGING
     msgFlag1 db "IM HERE 1", 10
@@ -30,9 +33,10 @@ section .data
 
     ; --- CONSTANTS 
     %define CHOICE_SIZE 2
-    %define FILE_PATH_SIZE 20
-    %define LOOK_UP_LEN 10
+    %define FILE_PATH_SIZE 10
+    %define LOOK_UP_LEN 20
     %define MAX_FILE_LEN 2048
+    %define MAX_USER_INPUT 200
 
     ; --- STANDARD IO
     STDIN equ 0
@@ -43,8 +47,10 @@ section .data
     O_RDONLY equ 0
     O_WRONLY equ 1
     O_RDWR equ 2
+    O_CREAT equ 64
 
     ; --- SYSTEM CALLS
+    SYS_LSEEK equ 8
     SYS_READ equ 0
     SYS_WRITE equ 1
     SYS_OPEN equ 2
