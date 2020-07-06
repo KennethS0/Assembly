@@ -1,7 +1,11 @@
 section .bss
 
-digitSpace resb 100
-digitSpacePos resb 8
+num1 resb 100
+num2 resb 100
+num3 resb 100
+num4 resb 100
+num5 resb 100
+num6 resb 100
 
 changedWord resb 1
     ; --- FILE MANAGEMENT
@@ -186,7 +190,7 @@ MESSAGE resb MAX_USER_INPUT
         cmp BYTE[changedWord], 1
         je %%_resetWordCount
 
-        jmp %%_increment
+        jmp %%_lookUpLoop
 
     %%_resetWordCount:
         mov BYTE[changedWord], 0
@@ -211,7 +215,7 @@ MESSAGE resb MAX_USER_INPUT
                 mov bl, BYTE[%3 + r9]
                 mov BYTE[%5 + rcx], bl
                 mov BYTE[changedWord], 1
-                inc r13             ; Increments the counter of changed letters
+                inc r13             ; Increments the counter of changed letters 
 
         %%_endloop:
             xor r9, r9
@@ -242,6 +246,7 @@ MESSAGE resb MAX_USER_INPUT
         jmp %%_loop
 
     %%_endloop:
+
 %endmacro 
 
 ; --- GET FILE SIZE
@@ -254,46 +259,38 @@ MESSAGE resb MAX_USER_INPUT
 %endmacro
 
 
-;--This was used for debugging purposes
-; --- PRINT RAX
-%macro printRax 0
-    mov rcx, digitSpace
-    mov rbx, 10
-    mov [rcx], rbx
-    inc rcx
-    mov [digitSpacePos], rcx
+; %1 Register holding a number
+; %2 Reserved memory
+%macro printDigit 2
+    mov rax, %1
 
-    %%_printRAXLoop:
-        mov rdx, 0
-        mov rbx, 10
-        div rbx
-        push rax
-        add rdx, 48
+    mov r8, 10 
+    xor rcx, rcx ; Contador
+    push 10 
 
-        mov rcx, [digitSpacePos]
-        mov [rcx], dl
-        inc rcx
-        mov [digitSpacePos], rcx
-        
-        pop rax
+    %%rloop:
+        xor rdx, rdx
+        div r8
+        add rdx, 48 ; Conversion a caracter
+        push rdx
+
         cmp rax, 0
-        jne %%_printRAXLoop
+        je %%sloop ; RAX vacio 
+    
+        jmp %%rloop
 
-    %%_printRAXLoop2:
-        mov rcx, [digitSpacePos]
+    %%sloop:
+        xor r9, r9 ; Holder temporal
+        pop r9
+        mov [%2 + rcx], r9
+        inc rcx
 
-        mov rax, 1
-        mov rdi, 1
-        mov rsi, rcx
-        mov rdx, 1
-        syscall
+        cmp r9, 10
+        je %%_end
 
-        mov rcx, [digitSpacePos]
-        dec rcx
-        mov [digitSpacePos], rcx
-
-        cmp rcx, digitSpace
-        jge %%_printRAXLoop2
+        jmp %%sloop
+    %%_end:
+    print %2, 100
 %endmacro
 
 ; --- Divides two numbers to obtain the percentage

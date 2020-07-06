@@ -86,9 +86,6 @@ _malespinToSpanish:
     jmp _createOutPut
 
 _createOutPut:
-    mov rax, r15
-    printRax
-
     openFile OUTPUT_FILE_NAME, O_CREAT+O_WRONLY ; Creates the output file and opens it as write only
     writeFile outputmsg, r8
     
@@ -99,34 +96,30 @@ _createOutPut:
     print OUTPUT_FILE_NAME, OUTPUT_FILE_NAME_LEN
     print msgTotalWords, msgTotalWordsLen
     
-    mov rax, r14
-    printRax
+    printDigit r14, num1
 
     print msgTotalLetters, msgTotalLettersLen
     
-    mov rax, r12
-    printRax
+    printDigit r12, num2
 
     print msgTotalChangedWords, msgTotalChangedWordsLen
     
-    mov rax, r15
-    printRax
+    printDigit r15, num3
 
     print msgTotalChangedLetters, msgTotalChangedLettersLen
 
-    mov rax, r13
-    printRax
+    printDigit r13, num4
 
 
     print msgChangedLettersRate, msgChangedWordsLettersLen
 
     getPercentage r13, r12
-    printRax
+    printDigit rax, num5
 
     print msgChangedWordsRate, msgChangedWordsRateLen
 
     getPercentage r15, r14
-    printRax
+    printDigit rax, num6
 
     jmp _exit
 

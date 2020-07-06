@@ -55,10 +55,10 @@ section .data
 
     ; --- CONSTANTS 
     %define CHOICE_SIZE 2
-    %define FILE_PATH_SIZE 10
+    %define FILE_PATH_SIZE 30
     %define LOOK_UP_LEN 20
     %define MAX_FILE_LEN 2048
-    %define MAX_USER_INPUT 200
+    %define MAX_USER_INPUT 2048
 
     ; --- STANDARD IO
     STDIN equ 0
