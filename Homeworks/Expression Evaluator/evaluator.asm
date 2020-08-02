@@ -34,36 +34,39 @@ _start:
     ; Shows detected variables and gets their data
     getVarData
 
-    ; Get 
+    ; Evaluates the post fix expression
+    evaluatePostfix postfixExpression, r8
 
-    ; Print result
-    ; printDigit
+    ; Shows the result to the user
+    print msgResult, msgResultLen
+    printDigit r8, result
 
     jmp _exit
+
+
 
 _expressionError:
     print msgExpressionError, msgExpressionErrorLen
-    jmp _options
+    jmp _exit
 
 _zeroDivError:
     print msgZeroDivError, msgZeroDivErrorLen
-    jmp _options
+    jmp _exit
 
 _fractionError:
     print msgFractionError, msgFractionErrorLen
-    jmp _options
+    jmp _exit
 
 _variableError:
     print msgVariableError, msgVariableErrorLen
-    jmp _options
+    jmp _exit
 
 _valueError:
     print msgValueError, msgValueErrorLen
-    jmp _options
-
-_options:
-    print msgOptions, msgOptionsLen
     jmp _exit
+
+_overflowError:
+    print msgOverflowError, msgOverflowErrorLen
 
 _exit:
     end
